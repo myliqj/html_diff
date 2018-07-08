@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<!-- saved from url=(0045)http://cemerick.github.io/jsdifflib/demo.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <title>文本对比 jsdifflib demo</title>
+  <link rel="stylesheet" type="text/css" href="./jsdifflib_demo_files/diffview.css">
+  <script type="text/javascript" src="./jsdifflib_demo_files/diffview.js"></script><style type="text/css" abt="234"></style>
+  <script type="text/javascript" src="./jsdifflib_demo_files/difflib.js"></script>
+  <script type="text/javascript" src="./jsdifflib_demo_files/myjs.js"></script>
+<style type="text/css">
+body {
+  font-size: 12px;
+  font-family: Sans-Serif;
+}
+h2 {
+  margin: 0 0 0.1em;
+  text-align: center;
+}
+.top {
+  text-align: center;
+}
+.textInput {
+  display: block;
+  width: 49%;
+  float: left;
+}
+textarea {
+  width:100%;
+  height:400px;
+}
+label:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+.spacer {
+  margin-left: 10px;
+}
+
+input[type="checkbox" i] {
+    margin: 6px 3px 3px 3px;
+}
+
+.viewType {
+  font-size: 14px;
+  clear: both;
+  text-align: left; // center
+  padding: .3em;
+}
+#diffoutput {
+  //width: 100%;
+  //height: 300px;
+  overflow-y:auto; overflow-x:auto; width:100%; height:380px;
+}
+
+.current_th {
+  background:#FF3333 !important;
+  /*color:#FF0000;
+  display: block;*/
+}
+
+</style>
+
+<style type="text/css">
+.cls_myfloat {
+  position:fixed !important;
+  /*position:absolute;*/
+  _top:expression(eval(document.documentElement.scrollTop+document.documentElement.clientHeight-this.offsetHeight));
+  z-index: 2147483647;
+  /*margin-left: -240px !important;
+  left: 80%;*/
+  right:0%;
+  top: 1%;
+  /*margin-top: -40px !important;*/
+  /*width:487px; height:350px; cursor:pointer;*/
+  /*background:url("0.png") no-repeat;*/
+  /*display:none;*/
+  width:580px; // 560px
+  height:40px;
+}
+
+.select_input_myfloat{
+  position:fixed !important;
+  _top:expression(eval(document.documentElement.scrollTop+document.documentElement.clientHeight-this.offsetHeight));
+  z-index: 2147483646;
+  /*right:50%;*/
+  top: 80%;
+  /*margin-top: 20px !important;*/
+  width:100%;
+  height:40px;
+  //display:none;
+}
+
+
+table.bottom_row{
+  //width:100%;
+  background-color:#e8e8e8;
+  // border:1px solid #BBC;
+  //border-color:#bbc;
+  //border-bottom-style:solid;
+  //border-width:0 0 0.1em;
+  word-wrap:break-word;
+  word-break:break-all;
+  display:inline-block;
+}
+
+/* 底部，行号部份 td, 宽5%, 不换行*/
+.bottom_row_num{
+  background-color:#ffc;
+  width:60px;
+  height:20px;
+  text-align:left;
+	white-space:pre-wrap;
+  border:1px solid #bbc;
+}
+
+.bottom_row_val{
+  //width:93%;
+  height:20px;
+  text-align:left;
+	white-space:pre-wrap;
+  border:1px solid #bbc;
+}
+
+.no_one_a_1{
+  //background-color:red;
+  color:red;
+}
+.no_one_b_1{
+  //background-color:red;
+  color:red;
+}
+
+</style>
+
+<script type="text/javascript">
+var byId = function (id) { return document.getElementById(id); }
+
+function getElementsByClassName(node,classname){
+         if(node.getElementsByClassName) {
+             return node.getElementsByClassName(classname);
+         }else {
+             var results = [];
+             var elems = node.getElementsByTagName("*");
+             for(var i = 0; i < elems.length; i++){
+                 if(elems[i].className.indexOf(classname) != -1){
+                     results[results.length] = elems[i];
+                 }
+             }
+             return results;
+         }
+     }   
+
+var diffCount = 0;
+var nextRow = 0;
+var diff_tr,down_tr,down_tr_bg;
+var url_1 = window.location.host; //window.location.href;
+//document.onmousedown = function(e) { //点击获取表格中的值  
+//  alert(e.target.innerHTML)  
+//}
+function resetNext(){
+  nextRow = 0;
+  if (typeof diff_tr == "object") setTrInfo(diff_tr,false);
+  diff_tr = null;
+  byId("btnnextval").value = nextRow;
+  byId("btnnext").value = "下一个不同("+nextRow + "/"+diffCount+")";
+}
+
+function nextDiff(type){
+  /*
+  type=-1 重新开始，重置变量
+  type=1  下一个不同
+  type=2  到指定
+  type=3  到指定下一个
+  type=10 是否仅显示不同
+  type=diff_count 统计
+  */
+
+  if (type==-1){
+    // 重新循环
+    resetNext();
+    return;
+  }
+  if (type=="1" && diffCount==0){
+    alert("没有不相同部份，不能指定下一个！");
+    return;
+  }
+  
+  if (type==1 && nextRow>=diffCount) {
+    var isok = confirm("已到最后，是否重新开始？");
+    if (isok)
+      nextRow = 0;
+    else
+      return;
+  }
+  
+  if (type==2 || type ==3){
+    var goval = byId("btnnextval").value;
+    var ispuls = false;
+    if (goval!="" && goval.substr(0,1)=="+"){
+      ispuls = true;
+    }
+    var val = parseInt(goval);
+    if (val == -1) {
+      // prompt(a,b)：弹窗输入。接收两个部分：a--提示内容；b--输入框的默认文本。（两部分都可以省略）。输入的内容默认都是字符串。
+      var v2 = prompt("录入转到页：","");
+      if (v2!="") val = parseInt(v2);
+    }
+    //alert(typeof(val));
+    if ( typeof(val)== "number" && val>0 && val<=diffCount){
+      // type==2 转到指定, type==3 从指定开始下一个
+      if (ispuls){
+        nextRow = nextRow + val; // + 不同数
+      }else{
+        nextRow = val;
+      }
+      if (type==2) nextRow = nextRow-1;
+      type = 1;
+    } else {
+      return;
+    }
+  }
+  
+  if (type==1 && nextRow>diffCount) {
+    var isok = confirm("会转超最后，是否重新开始？");
+    if (isok)
+      nextRow = 0;
+    else
+      return;
+  }
+  
+  var is_show_equal = byId("show_only_diff").checked;// || type==10 || type==11;
+  var table_class = "diff";
+  var tableInfo = "";
+  var tableObj = getElementsByClassName(document,table_class)[0];
+  var curDiff = 0;
+  var max_line_r = 0; max_line_l = 0; // 最大行数
+  var lEqual=0;var lReplace=0;var lEmpty=0;var lInsert=0;var lDelete=0;var lSkip=0;
+  var rEqual=0;var rReplace=0;var rEmpty=0;var rInsert=0;var rDelete=0;var rSkip=0; 
+  // Equal 二边相同,Replace 有不相同,Empty 左或右边无,Insert 右边增,Delete 右边无, Skip 跳过
+  for (var i = 1; i < tableObj.rows.length; i++) {
+    //遍历Table的所有Row    for (var j = 0; j < tableObj.rows[i].cells.length; j++) {
+    //遍历Row中的每一列      tableInfo += tableObj.rows[i].cells[j].innerText;
+    //获取Table中单元格的内容      tableInfo += "  ";    }    tableInfo += "\n";
+      
+    //alert(tableObj.rows[i].cells.length); // 4
+    var td_1 = tableObj.rows[i].cells[1];
+    var td_2 = tableObj.rows[i].cells[3];
+    var td_1_class = td_1.className;
+    var td_2_class = td_2.className;
+    
+    if (td_1_class=="equal"){
+      // 仅仅显示
+      if (is_show_equal){
+        tableObj.rows[i].style.display = "none";
+      }else{
+        tableObj.rows[i].style.display = ""; //table-row
+      }
+    }
+    if (type=="diff_count"){ 
+      var lv = parseInt(tableObj.rows[i].cells[0].innerText.trim());
+      if ( !isNaN(lv) && typeof(lv)== "number"){ 
+        max_line_l = lv+0;
+      }
+      var rv = parseInt(tableObj.rows[i].cells[2].innerText.trim());
+      if (!isNaN(rv) && typeof(rv)== "number"){
+        max_line_r = rv+0;
+      } 
+      lEqual  += td_1_class=="equal"?1:0;
+      lReplace+= td_1_class=="replace"?1:0;
+      lEmpty  += td_1_class=="empty"?1:0;
+      lInsert += td_1_class=="insert"?1:0;
+      lDelete += td_1_class=="delete"?1:0;
+      lSkip   += td_1_class=="skip"?1:0;
+      rEqual  += td_2_class=="equal"?1:0;
+      rReplace+= td_2_class=="replace"?1:0;
+      rEmpty  += td_2_class=="empty"?1:0;
+      rInsert += td_2_class=="insert"?1:0;
+      rDelete += td_2_class=="delete"?1:0;
+      rSkip   += td_2_class=="skip"?1:0;
+    }
+    
+    if (td_1_class!="equal"){
+      if (type=="diff_count"){
+        diffCount = diffCount + 1;
+        setTrInfo(tableObj.rows[i],false,"count",diffCount);
+      }else if (type=="1") {
+        curDiff = curDiff + 1;
+        
+        if (curDiff>nextRow){
+          nextRow = nextRow + 1;
+          if (typeof diff_tr == "object") {
+            setTrInfo(diff_tr,false);
+          }
+          diff_tr = tableObj.rows[i];
+          setTrInfo(diff_tr,true);
+          //alert(nextRow + "/" + diffCount + "    td_1=" + td_1_class + " :" + td_1.innerText + ", td_2=" + td_1_class + " :"+ td_2.innerText);
+          self.location.href = url_1 + "#current_pos";
+          var vpos=window.pageYOffset?window.pageYOffset:document.body.offsetHeight;
+          if (vpos>0){
+            f_scroll = scroll?scroll:self.scrollTo;
+            if (typeof f_scroll=="function") {
+              if (getScrollTop() + getWindowHeight() != getScrollHeight()){
+                f_scroll(0, vpos-230);
+              }
+            }
+          }
+          
+          byId("btnnextval").value = nextRow;
+          byId("btnnext").value = "下一个不同("+nextRow + "/"+diffCount+")";
+          show_diff_bottom(diff_tr);
+          break;
+        }
+        /*if (nextRow>=diffCount) {
+            var isok = confirm("已到最后，是否重新开始？");
+          if (isok)
+            nextRow = 0;
+          else
+            nextDiff = nextDiff + 1;
+        }*/
+      }else{
+        //alert("td_1=" + td_1_class + " :" + td_1.innerText + ", td_2=" + td_1_class + " :"+ td_2.innerText);
+      }
+    }
+  }
+  
+  if (type=="diff_count"){
+    var lSum = "源：" + max_line_l + " 行, eq="+lEqual+",mod="+lReplace+",null="+lEmpty+",ins="+lInsert+",del="+lDelete+",skip="+lSkip;
+    var rSum = "新：" + max_line_r + " 行, eq="+rEqual+",mod="+rReplace+",null="+rEmpty+",ins="+rInsert+",del="+rDelete+",skip="+rSkip;
+    //alert(lSum);alert(lSum);
+    byId("sum").innerText = lSum + "\r" + rSum;
+  }
+}
+function setTrInfo(obj,iscur,count,current){
+  if (obj == null) return;
+  if (typeof obj != "object") return;
+  if (obj.cells.length<=0) return;
+  
+  if (count=="count"){
+    // 在中间增加不同数量显示 (*)
+    var val = obj.cells[2].innerText;
+    obj.cells[2].innerText = "("+current+") " + val;
+    return;
+  }
+  
+  if (!iscur){
+    obj.cells[0].className = '';  // 去除样式
+    obj.cells[2].className = '';
+    
+    var a1 = byId("current_pos");
+    if (a1!=null)  obj.cells[0].removeChild(a1);  // 去除书签
+    return;
+    /*var val = obj.cells[0].innerText;
+    var pos = val.indexOf('* ');
+    if (pos>=0){
+      obj.cells[0].innerText = val.substring(pos+1);
+    }
+    return;*/
+  }
+  if (iscur){
+    obj.cells[0].className = 'current_th';  // 增加样式，可以显示背景红色
+    obj.cells[2].className = 'current_th';
+    var a1=document.createElement("a");     // 增加书签，可以定位
+    a1.id = "current_pos";
+    a1.name = "current_pos";
+    //var a1 = byId("diff_pos");
+    obj.cells[0].appendChild(a1); 
+    return;
+    /*var ins_text = "<font color=\"red\">*</font> ";
+    obj.cells[0].outerHTML = '<th>'+ins_text + obj.cells[0].innerText+'</th>';
+    return;*/
+  }
+
+}
+
+function diffUsingJS() {
+  diffCount = 0;
+  nextRow = 0;
+  
+  "use strict";
+  //var byId = function (id) { return document.getElementById(id); },
+  var  base = difflib.stringAsLines(byId("baseText").value),
+    newtxt = difflib.stringAsLines(byId("newText").value),
+    sm = new difflib.SequenceMatcher(base, newtxt),
+    opcodes = sm.get_opcodes(),
+    diffoutputdiv = byId("diffoutput"),
+    contextSize = ""; //byId("contextSize").value;
+
+  diffoutputdiv.innerHTML = "";
+  contextSize = contextSize || null;
+
+  diffoutputdiv.appendChild(diffview.buildView({
+    baseTextLines: base,
+    newTextLines: newtxt,
+    opcodes: opcodes,
+    baseTextName: "Base Text",
+    newTextName: "New Text",
+    contextSize: contextSize,
+    viewType: byId("inline").checked ? 1 : 0
+  }));
+  nextDiff("diff_count");
+  byId("btnnext").value = "下一个不同("+diffCount+")";
+  hideobj(1,false);
+  
+}
+
+function show_diff_bottom(tr){ 
+  var a = tr.cells[1].innerText;
+  var b = tr.cells[3].innerText;
+  var a2='<span class="yes_one">';
+  var b2='<span class="yes_one">';
+  var j=-1;
+  for (i=0;i<a.length;i++){
+    var c = a.charAt(i);
+    j++;
+    if (j>b.length){
+      a2 = a2 + '</span><span class="no_one_a_1">' + a.substr(i,a.length);
+      break;
+    }
+    d = b.charAt(j);
+    if (c!=d){
+      if (j==b.length){
+        a2 = a2 + '</span><span class="no_one_a_1">' + a.substr(i,a.length);
+        b2 = b2 + '</span><span class="no_one_b_1">' + d;
+        i = a.length; j= b.length;
+        break;
+      }
+    
+      var pos = b.indexOf(c,j+1);
+      if (pos==-1) {
+        // 右边无左边的字符了，反向查找，从左边下一个字符找右边。
+        var pos2 = -1; //a.indexOf(d,i);
+        if (pos2==-1){
+          // 没有相同的了，后面全部是不相同
+          a2 = a2 + '</span><span class="no_one_a_1">' + a.substr(i,a.length);
+          b2 = b2 + '</span><span class="no_one_b_1">' + b.substr(j,b.length);
+          i = a.length; j= b.length;
+          break;
+        }else{
+          // 反向查找得到，左边移光标，右边不移
+          //a2 = a2 + c + '</span><span class="no_one_a_1">' + a.substring(i+1,pos2-1)+'</span><span class="yes_one">';
+          //b2 = b2 + d;
+          //i = pos2-1;
+        }
+      }else{
+        // 在右边找得到，跳过找不取的部份，继续循环，右边移光标，左边不移
+        a2 = a2 + c;
+        b2 = b2 + '</span><span class="no_one_b_1">' + b.substring(j,pos)+'</span><span class="yes_one">';
+        j = pos-1;
+      }
+      //a2 = a2 + '<span class="no_one_1">' + c;
+    }else{
+      a2 = a2 + c;
+      b2 = b2 + d;
+    }
+  }
+  //alert("i="+i+",j="+j+ ",a.len="+a.length+ ",b.len="+b.length)
+  a2 = a2 + '</span>';
+  if (i<=j+1 && j<b.length){
+    b2 = b2 + '</span><span class="no_one_b_1">' + b.substr(j+1,b.length)+'</span>';
+  } else {
+    b2 = b2 + '</span>';
+  }
+  
+  
+  byId("left_td_t").innerText = tr.cells[0].innerText; //"Old Text {" + tr.cells[0].innerText + "}  "
+  //byId("left_td").innerText = ": " +tr.cells[1].innerText;
+  byId("left_td").innerHTML = ""+a2;
+  byId("right_td_t").innerText = tr.cells[2].innerText; //"New Text {" + tr.cells[2].innerText + "}  ";
+  //byId("right_td").innerText = ": " +tr.cells[3].innerText;
+  byId("right_td").innerHTML = ""+b2;
+  setDownTrbg(down_tr,tr);
+  down_tr = tr;
+}
+
+function whichElement(e)
+{
+  var targ
+  if (!e) var e = window.event
+  if (e.target) targ = e.target
+  else if (e.srcElement) targ = e.srcElement
+  if (targ.nodeType == 3) // defeat Safari bug
+     targ = targ.parentNode
+  var tname
+  tname=targ.tagName
+  //byId("left_td").value = byId("left_td").value + " " + tname
+  if ("TD"==tname || "TH"==tname){
+    var tr=targ.parentNode;
+    if (tr == null) return;
+    if (typeof tr != "object" && tr.tagName!="TR") return;
+    if (tr.cells.length<3) return;
+    show_diff_bottom(tr);
+  }
+  //alert("You clicked on a " + tname + " element.")
+}
+function setDownTrbg(o,n){
+  if (typeof o == "object"){
+    o.style.backgroundColor = down_tr_bg;
+    //alert("O:" +o.style.backgroundColor);
+  }
+  if (typeof n == "object") {
+    down_tr_bg = n.style.backgroundColor;
+    n.style.backgroundColor = "#FF3";
+    //alert("N:" + n.style.backgroundColor);
+  }
+}
+
+function hideobj(type,ishide){
+  if(type==1){
+    // 隐藏行
+    //var isinputhide = byId("hide_header").checked;
+    
+    //byId("hide_myfloat2").checked = ishide;
+    byId("hide_myfloat3").checked = ishide;
+    if(ishide){
+      byId('current_td').style.display='none';
+      byId('diffoutput').style.display='none';
+      byId("baseText").style.height = '300px';
+      byId("newText").style.height = '300px'; 
+    }else{
+      byId('current_td').style.display='inline-block';
+      byId('diffoutput').style.display='inline-block';
+      //if (isinputhide){
+        byId("baseText").style.height = "50px";
+        byId("newText").style.height = "50px"; 
+      //}
+    }
+    //if(!isinputhide){
+    //}
+    //alert(isinputhide);
+    //alert(byId("newText").style.height);
+  }
+
+}
+
+</script>
+</head>
+<body onmousedown="whichElement(event)">
+  <div id="top"></div>
+
+<!--div id="floatAd" style=" position:fixed !important; position:absolute; _top:expression(eval(document.documentElement.scrollTop+document.documentElement.clientHeight-this.offsetHeight)); z-index: 2147483647; left: 50%; margin-left: -240px !important; top: 50%; margin-top: -210px !important; background:url('0.png') no-repeat; width:487px; height:350px; cursor:pointer; display:none; ">
+<input type="button" value="下一个不同" onclick="javascript:nextDiff(1);"/>aaa</div-->
+
+  <!--h1 class="top"><a href="http://github.com/cemerick/jsdifflib">jsdifflib</a> demo</h1>
+  <div class="top">
+    <strong>Context size (optional):</strong> <input type="text" id="contextSize" value="">
+  </div-->
+  <div class="viewType" >查看方式：
+    <input type="radio" name="_viewtype" checked="checked" id="sidebyside"><label for="sidebyside">左右并排</label>
+    <input type="radio" name="_viewtype" id="inline"><label for="inline">上下对比</label>
+    <input id="hide_header" type="checkbox" value="false"
+      onclick="javascript:if(this.checked){byId('header').style.display='none';}else{byId('header').style.display='';};">
+    <label for="hide_header">隐藏输入</label>&nbsp;
+    
+    <input id="hide_myfloat" type="checkbox" value="false"
+      onclick="javascript:if(this.checked){byId('myfloat').style.display='none';}else{byId('myfloat').style.display='';};">
+    <label for="hide_myfloat">隐藏面板</label>&nbsp;
+<!--
+<input id="hide_myfloat2" type="checkbox" value="true" onclick="javascript:hideobj(1,this.checked);">
+<label for="hide_myfloat2">隐藏行</label>&nbsp; -->
+    <input type="button" value="开始对比" onclick="javascript:diffUsingJS();">
+  </div>
+  
+  <div id="header">
+    <div class="textInput">
+      <h2>Base Text（源文本）</h2>
+      <textarea id="baseText"></textarea>
+    </div>
+    <div class="textInput spacer">
+      <h2>New Text（新文本）</h2>
+      <textarea id="newText"></textarea>
+    </div>
+  </div>
+  
+  <div id="myfloat" class="cls_myfloat">
+    <input type="button" value="重新对比" onclick="javascript:diffUsingJS();">&nbsp;&nbsp;&nbsp;
+    <input id="btnnext" type="button" value="下一个不同" onclick="javascript:nextDiff(1);"/>
+    <input id="btnnextval" type="text" style="width:40px" alt="Num 转到指定，-1 手工录入指定，+Num 当前增加"/>
+    <input id="btnnext_go" type="button" value="(+-N)到指定" onclick="javascript:nextDiff(2);"/>
+    <input id="btnnext_go_start" type="button" value="下个" onclick="javascript:nextDiff(3);"/>&nbsp;
+    <input id="hide_myfloat3" type="checkbox" value="true"
+      onclick="javascript:hideobj(1,this.checked);">
+    <label for="hide_myfloat3">隐藏结果</label>
+    &nbsp;<a href="#top">Top</a>&nbsp;
+    <!-- <input type="button" onclick="javascript:byId('myfloat').style.display='none';byId('hide_myfloat').checked=true;" value="Hide"> -->
+    <input type="button" value="清空" onclick="javascript:byId('baseText').value='';byId('newText').value='';hideobj(1,true);">&nbsp;
+    <br/>
+    <input id="show_only_diff" type="checkbox"
+      onclick="javascript:nextDiff(10);">
+    <label for="show_only_diff">仅显示不同</label>
+  </div>
+
+  
+  <a id="diff_pos" name="diff_pos"></a>
+  <div class="viewType">
+  <!-- input type="radio" name="_viewtype" id="sidebyside" onclick="diffUsingJS(0);"> <label for="sidebyside">Side by Side Diff</label>
+  &nbsp; &nbsp;
+  <input type="radio" name="_viewtype" id="inline" onclick="diffUsingJS(1);"> <label for="inline">Inline Diff</label-->
+  
+  </div>
+  <div id="diffoutput"> </div>
+  
+  <div id="current_tda" class="select_input_myfloata" style="display:none;">
+    <div class="left_input">
+      <span id="left_td_ta">old&nbsp;td:</span><div id="left_tda"></div>
+    </div>
+    <div class="right_input">
+      <span id="right_td_ta">new&nbsp;td:</span><div id="right_tda"></div>
+    </div>
+  </div>
+  <br/>
+  <table id="current_td" class="bottom_row">
+    <tr>
+      <td class="bottom_row_num" id="left_td_t"></td>
+      <td class="bottom_row_val" id="left_td"></td>
+    </tr>
+    <tr>
+      <td class="bottom_row_num" id="right_td_t"></td>
+      <td class="bottom_row_val" id="right_td"></td>
+    </tr>
+  </table>
+  <div id="sum"></div>
+</body></html>
