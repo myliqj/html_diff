@@ -26,7 +26,7 @@ h2 {
 }
 textarea {
   width:100%;
-  height:400px;
+  height:300px;
 }
 label:hover {
   text-decoration: underline;
@@ -41,10 +41,11 @@ input[type="checkbox" i] {
 }
 
 .viewType {
-  font-size: 14px;
+  font-size: 9px;
   clear: both;
   text-align: left; // center
-  padding: .3em;
+  padding: .1em;
+  display:inline-block;
 }
 #diffoutput {
   //width: 100%;
@@ -68,14 +69,21 @@ input[type="checkbox" i] {
   z-index: 2147483647;
   /*margin-left: -240px !important;
   left: 80%;*/
-  right:0%;
-  top: 1%;
+  /*right:0%;*/
+  left:0%;
+  top: 0%;
   /*margin-top: -40px !important;*/
   /*width:487px; height:350px; cursor:pointer;*/
   /*background:url("0.png") no-repeat;*/
   /*display:none;*/
-  width:580px; // 560px
-  height:40px;
+  /*width:1080px; */
+  // 560px
+  width:100%;
+  height:30px;
+  font-size: 12px;
+  clear: both;
+  padding: .1em;
+  display:inline-block;
 }
 
 .select_input_myfloat{
@@ -400,67 +408,142 @@ function diffUsingJS() {
   nextDiff("diff_count");
   byId("btnnext").value = "下一个不同("+diffCount+")";
   hideobj(1,false);
-  
+  hide_input(true);
 }
 
-function show_diff_bottom(tr){ 
+/*function show_diff_comp_html(tr){ 
+  var a = tr.cells[1].innerText;
+  var b = tr.cells[3].innerText;
+  var a2='<span class="yes_one">';
+  var b2='<span class="yes_one">';
+  if (a==b)||(a=='')||(b=='') {
+    var cls_name="yes_no";
+    if (a==''){
+      a2='<span class="yes_one">'+a+'</span>';
+    }
+    b2='<span class="yes_one">'+b+'</span>';
+  }else{
+    var arr = a.split('');
+    var brr = b.split(''); var b_len = brr.length;
+    var str = '';
+    for (i=0;i<arr.length;i++){
+      var c = arr[i];
+      if(i<b_len){
+        if (i<=b_cur){
+          var bstr_y = '';
+          var bstr_n = '';
+          for (j=b_cur;j<b_len;i++){
+            if (brr[j] == c){
+              bstr = bstr + brr[j];
+              break;
+            }
+          }
+          
+        }
+        
+      }
+    
+    }
+  
+  }
+
+}*/
+
+function text_span(){
+  var str = byId('baseText').value;
+  byId('baseText').value=byId('newText').value;
+  byId('newText').value=str;
+  
+  diffUsingJS();
+}
+
+function show_diff_bottom(tr){
+  var cy_xh = tr.cells[2].innerText;
+  var is_cy = 0;
+  if (cy_xh!=null && cy_xh.indexOf('(')>=0){
+    is_cy = 1;
+  }
+  //alert(is_no_cy + "  " + cy_xh);
+  
   var a = tr.cells[1].innerText;
   var b = tr.cells[3].innerText;
   var a2='<span class="yes_one">';
   var b2='<span class="yes_one">';
   var j=-1;
-  for (i=0;i<a.length;i++){
-    var c = a.charAt(i);
-    j++;
-    if (j>b.length){
-      a2 = a2 + '</span><span class="no_one_a_1">' + a.substr(i,a.length);
-      break;
-    }
-    d = b.charAt(j);
-    if (c!=d){
-      if (j==b.length){
+  if(1==is_cy){
+    for (i=0;i<a.length;i++){
+      var c = a.charAt(i);
+      j++;
+      if (j>=b.length){
         a2 = a2 + '</span><span class="no_one_a_1">' + a.substr(i,a.length);
-        b2 = b2 + '</span><span class="no_one_b_1">' + d;
-        i = a.length; j= b.length;
         break;
       }
-    
-      var pos = b.indexOf(c,j+1);
-      if (pos==-1) {
-        // 右边无左边的字符了，反向查找，从左边下一个字符找右边。
-        var pos2 = -1; //a.indexOf(d,i);
-        if (pos2==-1){
-          // 没有相同的了，后面全部是不相同
+      d = b.charAt(j);
+      if (c!=d){
+        if (j==b.length-1){
           a2 = a2 + '</span><span class="no_one_a_1">' + a.substr(i,a.length);
-          b2 = b2 + '</span><span class="no_one_b_1">' + b.substr(j,b.length);
+          b2 = b2 + '</span><span class="no_one_b_1">' + d;
           i = a.length; j= b.length;
           break;
-        }else{
-          // 反向查找得到，左边移光标，右边不移
-          //a2 = a2 + c + '</span><span class="no_one_a_1">' + a.substring(i+1,pos2-1)+'</span><span class="yes_one">';
-          //b2 = b2 + d;
-          //i = pos2-1;
         }
+      
+        var pos = b.indexOf(c,j+1);
+        if (pos==-1) {
+        
+          // 右边无左边的字符了，反向查找，从左边下一个字符找右边。
+          var pos2 = a.indexOf(d,i);
+          if (pos2>20 || pos2==-1){
+            // 太长，认为找不到, a 向后移1位，b不移位
+            pos2 = -1;
+            a2 = a2 + '</span><span class="no_one_a_1">' + c +'</span><span class="yes_one">';
+            j = j -1;
+            continue;
+          }else{
+            // 找到
+            // aab bcc -> aa b , b cc
+            a2 = a2 + '</span><span class="no_one_a_1">' + a.substring(i,pos2)+'</span><span class="yes_one">'+d;
+            b2 = b2 + d;
+            i = pos2;
+          }
+          
+          
+          /*if (pos2==-1){
+            // 没有相同的了，后面全部是不相同
+            a2 = a2 + '</span><span class="no_one_a_1">' + a.substr(i,a.length);
+            b2 = b2 + '</span><span class="no_one_b_1">' + b.substr(j,b.length);
+            i = a.length; j= b.length;
+            break;
+          }else{
+            // 反向查找得到，左边移光标，右边不移
+            //a2 = a2 + c + '</span><span class="no_one_a_1">' + a.substring(i+1,pos2-1)+'</span><span class="yes_one">';
+            //b2 = b2 + d;
+            //i = pos2-1;
+          } */
+          
+        }else{
+          // 在右边找得到，跳过找不到的部份，继续循环，右边移光标，左边不移
+          a2 = a2 + c;
+          b2 = b2 + '</span><span class="no_one_b_1">' + b.substring(j,pos)+'</span><span class="yes_one">'+c;
+          j = pos;
+        }
+        //a2 = a2 + '<span class="no_one_1">' + c;
       }else{
-        // 在右边找得到，跳过找不取的部份，继续循环，右边移光标，左边不移
         a2 = a2 + c;
-        b2 = b2 + '</span><span class="no_one_b_1">' + b.substring(j,pos)+'</span><span class="yes_one">';
-        j = pos-1;
+        b2 = b2 + d;
       }
-      //a2 = a2 + '<span class="no_one_1">' + c;
-    }else{
-      a2 = a2 + c;
-      b2 = b2 + d;
     }
+    //alert("i="+i+",j="+j+ ",a.len="+a.length+ ",b.len="+b.length)
+ 
+    a2 = a2 + '</span>';
+    if (j<b.length){
+      b2 = b2 + '</span><span class="no_one_b_1">' + b.substr(j+1,b.length)+'</span>';
+    } else {
+      b2 = b2 + '</span>';
+    }
+  }else{
+    a2 = a + '</span>';
+    b2 = b + '</span>';
   }
-  //alert("i="+i+",j="+j+ ",a.len="+a.length+ ",b.len="+b.length)
-  a2 = a2 + '</span>';
-  if (i<=j+1 && j<b.length){
-    b2 = b2 + '</span><span class="no_one_b_1">' + b.substr(j+1,b.length)+'</span>';
-  } else {
-    b2 = b2 + '</span>';
-  }
-  
   
   byId("left_td_t").innerText = tr.cells[0].innerText; //"Old Text {" + tr.cells[0].innerText + "}  "
   //byId("left_td").innerText = ": " +tr.cells[1].innerText;
@@ -504,6 +587,18 @@ function setDownTrbg(o,n){
   }
 }
 
+function hide_input(ishide){
+  if(ishide){
+    byId('header').style.display='none';
+  }else{
+    byId('header').style.display='';
+  }
+  
+  if (ishide != byId("hide_header").checked){
+    byId("hide_header").checked = ishide;
+  }
+}
+
 function hideobj(type,ishide){
   if(type==1){
     // 隐藏行
@@ -516,6 +611,7 @@ function hideobj(type,ishide){
       byId('diffoutput').style.display='none';
       byId("baseText").style.height = '300px';
       byId("newText").style.height = '300px'; 
+      hide_input(false);
     }else{
       byId('current_td').style.display='inline-block';
       byId('diffoutput').style.display='inline-block';
@@ -544,7 +640,8 @@ function hideobj(type,ishide){
   <div class="top">
     <strong>Context size (optional):</strong> <input type="text" id="contextSize" value="">
   </div-->
-  <div class="viewType" >查看方式：
+  <div class="viewType" ></div>
+ <!-- <div class="viewType" >
     <input type="radio" name="_viewtype" checked="checked" id="sidebyside"><label for="sidebyside">左右并排</label>
     <input type="radio" name="_viewtype" id="inline"><label for="inline">上下对比</label>
     <input id="hide_header" type="checkbox" value="false"
@@ -554,24 +651,34 @@ function hideobj(type,ishide){
     <input id="hide_myfloat" type="checkbox" value="false"
       onclick="javascript:if(this.checked){byId('myfloat').style.display='none';}else{byId('myfloat').style.display='';};">
     <label for="hide_myfloat">隐藏面板</label>&nbsp;
-<!--
+< !--
 <input id="hide_myfloat2" type="checkbox" value="true" onclick="javascript:hideobj(1,this.checked);">
-<label for="hide_myfloat2">隐藏行</label>&nbsp; -->
+<label for="hide_myfloat2">隐藏行</label>&nbsp; 
     <input type="button" value="开始对比" onclick="javascript:diffUsingJS();">
-  </div>
+  </div> -->
   
   <div id="header">
     <div class="textInput">
-      <h2>Base Text（源文本）</h2>
+      <!-- h2>Base Text（源文本）</h2 -->
       <textarea id="baseText"></textarea>
     </div>
     <div class="textInput spacer">
-      <h2>New Text（新文本）</h2>
+      <!-- h2>New Text（新文本）</h2 -->
       <textarea id="newText"></textarea>
     </div>
   </div>
   
   <div id="myfloat" class="cls_myfloat">
+    <input type="radio" name="_viewtype" checked="checked" id="sidebyside"><label for="sidebyside">左右并排</label>
+    <input type="radio" name="_viewtype" id="inline"><label for="inline">上下对比</label>
+    <input id="hide_header" type="checkbox" value="false"
+      onclick="javascript:hide_input(this.checked);">
+    <label for="hide_header">隐藏输入</label>&nbsp;
+    
+    <!--<input id="hide_myfloat" type="checkbox" value="false"
+      onclick="javascript:if(this.checked){byId('myfloat').style.display='none';}else{byId('myfloat').style.display='';};">
+     <label for="hide_myfloat">隐藏面板</label>&nbsp; -->
+  
     <input type="button" value="重新对比" onclick="javascript:diffUsingJS();">&nbsp;&nbsp;&nbsp;
     <input id="btnnext" type="button" value="下一个不同" onclick="javascript:nextDiff(1);"/>
     <input id="btnnextval" type="text" style="width:40px" alt="Num 转到指定，-1 手工录入指定，+Num 当前增加"/>
@@ -583,10 +690,11 @@ function hideobj(type,ishide){
     &nbsp;<a href="#top">Top</a>&nbsp;
     <!-- <input type="button" onclick="javascript:byId('myfloat').style.display='none';byId('hide_myfloat').checked=true;" value="Hide"> -->
     <input type="button" value="清空" onclick="javascript:byId('baseText').value='';byId('newText').value='';hideobj(1,true);">&nbsp;
-    <br/>
+     
     <input id="show_only_diff" type="checkbox"
       onclick="javascript:nextDiff(10);">
     <label for="show_only_diff">仅显示不同</label>
+    &nbsp;&nbsp;<input type="button" value="<<=互换=>>" onclick="javascript:text_span();">
   </div>
 
   
@@ -597,7 +705,6 @@ function hideobj(type,ishide){
   <input type="radio" name="_viewtype" id="inline" onclick="diffUsingJS(1);"> <label for="inline">Inline Diff</label-->
   
   </div>
-  <div id="diffoutput"> </div>
   
   <div id="current_tda" class="select_input_myfloata" style="display:none;">
     <div class="left_input">
@@ -618,5 +725,6 @@ function hideobj(type,ishide){
       <td class="bottom_row_val" id="right_td"></td>
     </tr>
   </table>
+  <div id="diffoutput"> </div>
   <div id="sum"></div>
 </body></html>
