@@ -161,7 +161,7 @@ function getElementsByClassName(node,classname){
 var diffCount = 0;
 var nextRow = 0;
 var diff_tr,down_tr,down_tr_bg;
-var url_1 = window.location.host; //window.location.href;
+//var url_1 = window.location.host; //window.location.href;
 //document.onmousedown = function(e) { //点击获取表格中的值  
 //  alert(e.target.innerHTML)  
 //}
@@ -302,7 +302,9 @@ function nextDiff(type){
           diff_tr = tableObj.rows[i];
           setTrInfo(diff_tr,true);
           //alert(nextRow + "/" + diffCount + "    td_1=" + td_1_class + " :" + td_1.innerText + ", td_2=" + td_1_class + " :"+ td_2.innerText);
-          self.location.href = url_1 + "#current_pos";
+          var url_2 = self.location.href;
+          // location.hash 返回 #号后的部份, href 是全部,search ?号后部份
+          self.location.href = url_2.replace(self.location.hash,'') + "#current_pos";
           var vpos=window.pageYOffset?window.pageYOffset:document.body.offsetHeight;
           if (vpos>0){
             f_scroll = scroll?scroll:self.scrollTo;
@@ -332,12 +334,41 @@ function nextDiff(type){
   }
   
   if (type=="diff_count"){
-    var lSum = "源：" + max_line_l + " 行, eq="+lEqual+",mod="+lReplace+",null="+lEmpty+",ins="+lInsert+",del="+lDelete+",skip="+lSkip;
-    var rSum = "新：" + max_line_r + " 行, eq="+rEqual+",mod="+rReplace+",null="+rEmpty+",ins="+rInsert+",del="+rDelete+",skip="+rSkip;
+    var base_len = byId("baseText").value.length;
+    var new_len = byId("newText").value.length;
+    
+    var lSum = "源：" + max_line_l + " 行, eq="+lEqual+",mod="+lReplace+",null="+lEmpty+",ins="+lInsert+",del="+lDelete+",skip="+lSkip + ',   base_len=' + base_len;
+    var rSum = "新：" + max_line_r + " 行, eq="+rEqual+",mod="+rReplace+",null="+rEmpty+",ins="+rInsert+",del="+rDelete+",skip="+rSkip + ',    new_len=' + new_len;
     //alert(lSum);alert(lSum);
     byId("sum").innerText = lSum + "\r" + rSum;
   }
 }
+
+function to_top_row_show(){
+  if (typeof diff_tr == "object") {
+    setTrInfo(diff_tr,false);
+  }
+  var tableObj = getElementsByClassName(document,"diff")[0];
+  if (tableObj==null) return;
+  if (tableObj.rows.length<2) return;
+  
+  diff_tr = tableObj.rows[1];
+  setTrInfo(diff_tr,true);
+  //alert(nextRow + "/" + diffCount + "    td_1=" + td_1_class + " :" + td_1.innerText + ", td_2=" + td_1_class + " :"+ td_2.innerText);
+  var url_2 = self.location.href;
+  // location.hash 返回 #号后的部份, href 是全部,search ?号后部份
+  self.location.href = url_2.replace(self.location.hash,'') + "#current_pos";
+  /*var vpos=window.pageYOffset?window.pageYOffset:document.body.offsetHeight;
+  if (vpos>0){
+    f_scroll = scroll?scroll:self.scrollTo;
+    if (typeof f_scroll=="function") {
+      if (getScrollTop() + getWindowHeight() != getScrollHeight()){
+        f_scroll(0, vpos-230);
+      }
+    }
+  } */
+}
+
 function setTrInfo(obj,iscur,count,current){
   if (obj == null) return;
   if (typeof obj != "object") return;
@@ -453,7 +484,7 @@ function text_span(){
   var str = byId('baseText').value;
   byId('baseText').value=byId('newText').value;
   byId('newText').value=str;
-  
+  str='';
   diffUsingJS();
 }
 
@@ -687,7 +718,7 @@ function hideobj(type,ishide){
     <input id="hide_myfloat3" type="checkbox" value="true"
       onclick="javascript:hideobj(1,this.checked);">
     <label for="hide_myfloat3">隐藏结果</label>
-    &nbsp;<a href="#top">Top</a>&nbsp;
+    &nbsp;<a href="javascript:to_top_row_show();">Top</a>&nbsp;
     <!-- <input type="button" onclick="javascript:byId('myfloat').style.display='none';byId('hide_myfloat').checked=true;" value="Hide"> -->
     <input type="button" value="清空" onclick="javascript:byId('baseText').value='';byId('newText').value='';hideobj(1,true);">&nbsp;
      
