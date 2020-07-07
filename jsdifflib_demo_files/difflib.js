@@ -37,14 +37,18 @@ difflib = {
 	
 	stripLinebreaks: function (str) { return str.replace(/^[\n\r]*|[\n\r]*$/g, ""); },
 	
-	stringAsLines: function (str) {
+	stringAsLines: function (str,isrtrim) {
 		var lfpos = str.indexOf("\n");
 		var crpos = str.indexOf("\r");
 		var linebreak = ((lfpos > -1 && crpos > -1) || crpos < 0) ? "\n" : "\r";
 		
 		var lines = str.split(linebreak);
 		for (var i = 0; i < lines.length; i++) {
-			lines[i] = difflib.stripLinebreaks(lines[i]);
+      if (isrtrim==1){
+        lines[i] = difflib.stripLinebreaks(lines[i].RTrim());
+      }else{
+        lines[i] = difflib.stripLinebreaks(lines[i]);
+      }
 		}
 		
 		return lines;

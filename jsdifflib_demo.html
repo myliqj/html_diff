@@ -411,14 +411,34 @@ function setTrInfo(obj,iscur,count,current){
 
 }
 
+//去除字符串前后所有空
+function Trim(str)
+{ return str.replace(/(^\s*)|(\s*$)/g, ""); }
+
+//在字符串原型上添加方法也可
+String.prototype.Trim = function()
+{ return this.replace(/(^\s*)|(\s*$)/g, ""); }
+
+//去除字符串前面空格
+String.prototype.LTrim = function()
+{ return this.replace(/(^\s*)/g, ""); }
+
+//去除字符串后面空格
+String.prototype.RTrim = function()
+{ return this.replace(/(\s*$)/g, ""); }
+
+
 function diffUsingJS() {
   diffCount = 0;
   nextRow = 0;
   
   "use strict";
+  //alert(byId("trimTrailangSpaces").checked);
+  var trimTrailangSpaces = byId("trimTrailangSpaces").checked ? 1 : 0;
+    
   //var byId = function (id) { return document.getElementById(id); },
-  var  base = difflib.stringAsLines(byId("baseText").value),
-    newtxt = difflib.stringAsLines(byId("newText").value),
+  var  base = difflib.stringAsLines(byId("baseText").value,trimTrailangSpaces),
+    newtxt = difflib.stringAsLines(byId("newText").value,trimTrailangSpaces),
     sm = new difflib.SequenceMatcher(base, newtxt),
     opcodes = sm.get_opcodes(),
     diffoutputdiv = byId("diffoutput"),
@@ -710,7 +730,7 @@ function hideobj(type,ishide){
       onclick="javascript:if(this.checked){byId('myfloat').style.display='none';}else{byId('myfloat').style.display='';};">
      <label for="hide_myfloat">隐藏面板</label>&nbsp; -->
   
-    <input type="button" value="重新对比" onclick="javascript:diffUsingJS();">&nbsp;&nbsp;&nbsp;
+    <input type="button" value="重新对比" onclick="javascript:diffUsingJS();">&nbsp;<input id="trimTrailangSpaces" type="checkbox" checked="1"><label for="trimTrailangSpaces">去后缀空格</label>&nbsp;&nbsp;
     <input id="btnnext" type="button" value="下一个不同" onclick="javascript:nextDiff(1);"/>
     <input id="btnnextval" type="text" style="width:40px" alt="Num 转到指定，-1 手工录入指定，+Num 当前增加"/>
     <input id="btnnext_go" type="button" value="(+-N)到指定" onclick="javascript:nextDiff(2);"/>
